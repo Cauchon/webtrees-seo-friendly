@@ -24,6 +24,7 @@ use Fisharebest\Webtrees\Registry;
 use Fisharebest\Webtrees\Services\NetworkService;
 use Fisharebest\Webtrees\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Http\Message\ServerRequestFactoryInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -137,6 +138,75 @@ class BadBotBlockerTest extends TestCase
 
         self::assertSame(StatusCodeInterface::STATUS_NOT_ACCEPTABLE, $response->getStatusCode());
         self::assertSame('Not acceptable: bad-dns', (string) $response->getBody());
+    }
+
+    /** @param list<string> $addresses */
+    #[DataProvider('crawlerDnsProvider')]
+    public function testCrawlerDns(string $ip, string|false $host, array $addresses, bool $allowed, bool $forward_lookup): void
+    {
+        $middleware = self::getMockBuilder(BadBotBlocker::class)
+            ->setConstructorArgs([self::createStub(NetworkService::class)])
+            ->onlyMethods(['reverseDns', 'forwardDns'])
+            ->getMock();
+        $middleware->expects(self::once())->method('reverseDns')->with($ip)->willReturn($host);
+        $middleware->expects($forward_lookup ? self::once() : self::never())
+            ->method('forwardDns')->with($host)->willReturn($addresses);
+
+        $handler = self::createMock(RequestHandlerInterface::class);
+        $handler->expects($allowed ? self::once() : self::never())
+            ->method('handle')
+            ->with(self::callback(static fn (ServerRequestInterface $request): bool =>
+                $request->getAttribute(BadBotBlocker::ROBOT_ATTRIBUTE_NAME) === true))
+            ->willReturn(response('Public record'));
+
+        // Cookies prevent the generic no-cookie heuristic from masking missing classification.
+        $request = self::browserRequest('Googlebot/2.1')
+            ->withAttribute('client-ip', $ip)
+            ->withCookieParams(['x' => 'y']);
+        $response = $middleware->process($request, $handler);
+
+        self::assertSame($allowed ? StatusCodeInterface::STATUS_OK : StatusCodeInterface::STATUS_NOT_ACCEPTABLE, $response->getStatusCode());
+        self::assertSame($allowed ? 'Public record' : 'Not acceptable: bad-dns', (string) $response->getBody());
+    }
+
+    /** @return iterable<string, array{string, string|false, list<string>, bool, bool}> */
+    public static function crawlerDnsProvider(): iterable
+    {
+        yield 'IPv4' => ['192.0.2.1', 'crawl.googlebot.com', ['192.0.2.1'], true, true];
+        yield 'IPv6' => ['2001:db8::1', 'crawl.googlebot.com', ['2001:db8::1'], true, true];
+        yield 'expanded IPv6 answer' => ['2001:db8::1', 'crawl.googlebot.com', ['2001:0db8:0000:0000:0000:0000:0000:0001'], true, true];
+        yield 'expanded IPv6 request' => ['2001:0db8:0000:0000:0000:0000:0000:0001', 'crawl.googlebot.com', ['2001:db8::1'], true, true];
+        yield 'second IPv4 answer' => ['192.0.2.1', 'crawl.googlebot.com', ['192.0.2.2', '192.0.2.1'], true, true];
+        yield 'second mixed-family answer' => ['2001:db8::1', 'crawl.googlebot.com', ['192.0.2.1', '2001:db8::1'], true, true];
+        yield 'mismatched forward answer' => ['192.0.2.1', 'crawl.googlebot.com', ['192.0.2.2'], false, true];
+        yield 'missing forward answer' => ['192.0.2.1', 'crawl.googlebot.com', [], false, true];
+        yield 'missing reverse answer' => ['192.0.2.1', false, [], false, false];
+        yield 'unresolved reverse address' => ['192.0.2.1', '192.0.2.1', [], false, false];
+        yield 'untrusted suffix' => ['192.0.2.1', 'googlebot.com.example.org', [], false, false];
+        yield 'domain boundary' => ['192.0.2.1', 'notgooglebot.com', [], false, false];
+        yield 'untrusted GCP fetcher' => ['192.0.2.1', 'fetch.gae.googleusercontent.com', [], false, false];
+    }
+
+    public function testReverseOnlyCrawlerDoesNotRequireForwardDns(): void
+    {
+        $middleware = self::getMockBuilder(BadBotBlocker::class)
+            ->setConstructorArgs([self::createStub(NetworkService::class)])
+            ->onlyMethods(['reverseDns', 'forwardDns'])
+            ->getMock();
+        $middleware->expects(self::once())->method('reverseDns')->with('192.0.2.1')->willReturn('crawl.baidu.com');
+        $middleware->expects(self::never())->method('forwardDns');
+
+        $handler = self::createMock(RequestHandlerInterface::class);
+        $handler->expects(self::once())->method('handle')
+            ->with(self::callback(static fn (ServerRequestInterface $request): bool =>
+                $request->getAttribute(BadBotBlocker::ROBOT_ATTRIBUTE_NAME) === true))
+            ->willReturn(response('Public record'));
+
+        $request = self::browserRequest('Baiduspider/2.0')
+            ->withAttribute('client-ip', '192.0.2.1')
+            ->withCookieParams(['x' => 'y']);
+
+        self::assertSame(StatusCodeInterface::STATUS_OK, $middleware->process($request, $handler)->getStatusCode());
     }
 
     private static function mixedPreviewUserAgent(): string

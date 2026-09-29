@@ -122,3 +122,25 @@ Prefer separating robots-only usage controls from actual HTTP-blocking identitie
 - Record matched token, response reason, and request rate when operationally available, so future policy changes use observed demand. No new monitoring has been installed by this audit.
 
 The stable-release workflow prepares updates for maintainer review; it does not deploy an installation. See [the fork guide](../../WEBTREES-SEO-FRIENDLY.md) for setup and [robots deployment guidance](../robots-deployment.md) for installation-specific checks.
+
+## Pre-release discovery follow-up
+
+Two implementation defects were corrected without changing the crawler lists:
+
+- Forward-confirmed reverse DNS now compares the requester against all A and
+  AAAA answers using binary address comparison. Trusted hostname suffixes and
+  robot route restrictions are unchanged. PHP's previous IPv4-only lookup could
+  reject legitimate IPv6 crawlers or a matching second IPv4 address. See
+  [PHP lookup behavior](https://www.php.net/manual/en/function.gethostbyname.php)
+  and [Google's verification guidance](https://developers.google.com/crawling/docs/crawlers-fetchers/verify-google-requests).
+- Robots query rules now include fully encoded routes and the installation's
+  base path. The application's route factory escapes tree-name characters once
+  for the path and again for the query value; the rules now cover both layers.
+  Existing raw and slash-encoded forms remain supported. Regression checks use
+  real generated URLs for spaces, non-ASCII names, plus signs, and percent signs,
+  at the domain root and in a subdirectory. Public individual/family pages and
+  sitemaps remain allowed; expensive routes and named training agents stay blocked.
+
+The new robots cases require Composer dependencies; the dependency-free checks
+remain available without them. An independent Protego 0.7.0 parser check also
+confirmed 180 generated-URL decisions and ten sitemap cases.
