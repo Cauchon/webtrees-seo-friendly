@@ -1,4 +1,4 @@
-# webtrees-less-restrictive
+# webtrees-seo-friendly
 
 An independent fork of [fisharebest/webtrees](https://github.com/fisharebest/webtrees),
 maintained by Justin Cauchon. It allows selected public-reading services while

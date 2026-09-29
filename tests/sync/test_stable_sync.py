@@ -27,7 +27,7 @@ final class CauchonBotPolicy {
 """
 FAKE_GH = """#!/bin/sh
 case "$1 $2" in
-  'repo view') echo 'Cauchon/webtrees-less-restrictive' ;;
+  'repo view') echo 'Cauchon/webtrees-seo-friendly' ;;
   'api --paginate') printf '%s\\n' "$MOCK_RELEASES" ;;
   'pr list') printf '%s\\n' "${MOCK_PR_STATE:-}" ;;
   'pr create') printf '%s\\n' "$*" >> "$MOCK_GH_LOG" ;;
@@ -173,7 +173,7 @@ class StableSyncTest(unittest.TestCase):
         result = run(["bash", "scripts/publish-upstream-sync.sh", str(self.out)], self.fork, self.env, check=False)
         self.assertEqual(result.returncode, 0, result.stderr)
         created = self.log.read_text().strip()
-        self.assertIn('--repo Cauchon/webtrees-less-restrictive', created)
+        self.assertIn('--repo Cauchon/webtrees-seo-friendly', created)
         self.assertIn('--draft', created)
 
 

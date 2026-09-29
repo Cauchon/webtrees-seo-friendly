@@ -1,8 +1,8 @@
-# Installing and releasing webtrees-less-restrictive
+# Installing and releasing webtrees-seo-friendly
 
 This is an independent fork of webtrees. The source repository is currently
-[Cauchon/webtrees](https://github.com/Cauchon/webtrees); the product name is
-**webtrees-less-restrictive**. A reviewed source commit, a published fork release,
+[Cauchon/webtrees-seo-friendly](https://github.com/Cauchon/webtrees-seo-friendly); the product name is
+**webtrees-seo-friendly**. A reviewed source commit, a published fork release,
 and a deployed installation are three separate states.
 
 ## Requirements
@@ -17,8 +17,8 @@ URL rewriting if using pretty URLs.
 
 ## New installation
 
-1. Choose a published release in the [fork's Releases page](https://github.com/Cauchon/webtrees/releases)
-   and download its attached `webtrees-<fork-tag>.zip` distribution. Check the
+1. Choose a published release in the [fork's Releases page](https://github.com/Cauchon/webtrees-seo-friendly/releases)
+   and download its attached `webtrees-seo-friendly-<fork-tag>.zip` distribution. Check the
    tag and recorded SHA-256 digest against the release notes. GitHub's generated
    **Source code** ZIP lacks the bundled PHP dependencies; an upstream webtrees
    ZIP lacks this fork's policy.
@@ -87,7 +87,7 @@ release approval.
    `git describe`.
 3. Run `composer webtrees:build`. It archives the committed source, installs
    production PHP dependencies into the distribution, compiles translations,
-   and creates `webtrees-<git-describe>.zip`. Check that the output name uses
+   and creates `webtrees-seo-friendly-<git-describe>.zip`. Check that the output name uses
    the intended fork tag; test the ZIP and inspect it for `webtrees/vendor/`,
    application files, and compiled translations. Record its SHA-256 digest. The
    build runs `composer install --no-dev` in the checkout, which is why a

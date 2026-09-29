@@ -121,4 +121,4 @@ Prefer separating robots-only usage controls from actual HTTP-blocking identitie
 - Implement the reviewed batches in the fork policy, leaving upstream BAD_ROBOTS intact. Add full-UA tests covering both successful candidates and preserved training blocks. Then test representative public pages, generated/live robots.txt, identity validation, and cookie-challenge behavior.
 - Record matched token, response reason, and request rate when operationally available, so future policy changes use observed demand. No new monitoring has been installed by this audit.
 
-The stable-release workflow prepares updates for maintainer review; it does not deploy an installation. See [the fork guide](../../WEBTREES-LESS-RESTRICTIVE.md) for setup and [robots deployment guidance](../robots-deployment.md) for installation-specific checks.
+The stable-release workflow prepares updates for maintainer review; it does not deploy an installation. See [the fork guide](../../WEBTREES-SEO-FRIENDLY.md) for setup and [robots deployment guidance](../robots-deployment.md) for installation-specific checks.

@@ -6,14 +6,14 @@
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/fisharebest/webtrees/badges/quality-score.png?b=main)](https://scrutinizer-ci.com/g/fisharebest/webtrees/?branch=main)
 [![Code Climate](https://codeclimate.com/github/fisharebest/webtrees/badges/gpa.svg)](https://codeclimate.com/github/fisharebest/webtrees)
 [![StyleCI](https://github.styleci.io/repos/11836349/shield?branch=main)](https://github.styleci.io/repos/11836349?branch=main)
-# webtrees-less-restrictive
+# webtrees-seo-friendly
 
-> **This is an independent fork.** `webtrees-less-restrictive` is maintained by
+> **This is an independent fork.** `webtrees-seo-friendly` is maintained by
 > Justin Cauchon and is not affiliated with or endorsed by the webtrees project.
 > It follows stable releases of [fisharebest/webtrees](https://github.com/fisharebest/webtrees)
 > and adjusts the bot policy to allow selected search engines, link previews,
 > and user-requested fetches. Named AI-training agents remain blocked.
-> See [WEBTREES-LESS-RESTRICTIVE.md](WEBTREES-LESS-RESTRICTIVE.md) for the policy and upstream review process.
+> See [WEBTREES-SEO-FRIENDLY.md](WEBTREES-SEO-FRIENDLY.md) for the policy and upstream review process.
 > Report problems with this fork's bot policy here, not to the webtrees project.
 
 The badges above describe the upstream project.
@@ -119,8 +119,8 @@ build requirements.
 
 ## Installation
 
-Install a published **webtrees-less-restrictive** distribution ZIP attached to a
-[release of this fork](https://github.com/Cauchon/webtrees/releases). Extract its
+Install a published **webtrees-seo-friendly** distribution ZIP attached to a
+[release of this fork](https://github.com/Cauchon/webtrees-seo-friendly/releases). Extract its
 `webtrees/` folder into the site directory, then open the site URL to start the
 setup wizard. GitHub's automatically generated source ZIP and upstream webtrees
 ZIPs are not fork distributions. If no fork release has been published, build a

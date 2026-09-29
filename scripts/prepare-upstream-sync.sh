@@ -136,7 +136,7 @@ else
 fi
 
 {
-    printf 'This draft PR merges published stable webtrees release `%s` into the Cauchon fork. It must remain unmerged until the site owner and Codex review every new blocked token and record decisions below.\n\n' "$tag"
+    printf 'This draft PR merges published stable webtrees release `%s` into webtrees-seo-friendly. It must remain unmerged until the site owner and Codex review every new blocked token and record decisions below.\n\n' "$tag"
     cat "$output_dir/bot-review.md"
     printf '\n## Validation\n\nPHP syntax checks passed. %s Review the branch diff before merging.\n' "$test_result"
 } > "$output_dir/pr-body.md"
