@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 import subprocess
 import unittest
@@ -35,13 +36,13 @@ ALLOWED_ROUTES = (
 )
 
 
-def render_template(base_path: str = "") -> str:
+def render_template(base_path: str = "", tree: str = "example-tree") -> str:
     php = (
         "$bad_user_agents = ['GPTBot', 'ClaudeBot', 'Google-Extended'];"
         "$base_path = " + repr(base_path) + ";"
         "$base_url = 'https://example.org';"
         "$sitemap_url = 'https://example.org/index.php?route=/sitemap.xml';"
-        "$trees = ['example-tree'];"
+        "$trees = [" + repr(tree) + "];"
         "include " + repr(str(TEMPLATE)) + ";"
     )
     return subprocess.run(
@@ -71,6 +72,39 @@ def render_effective_template() -> str:
     return subprocess.run(
         ["php", "-r", php], check=True, capture_output=True, text=True
     ).stdout
+
+
+
+def generated_urls(base_path: str, tree: str) -> dict[str, str]:
+    """Use the application's actual route factory, including query encoding."""
+    php = r"""
+require $argv[1] . '/vendor/autoload.php';
+(new Fisharebest\Webtrees\Webtrees())->bootstrap();
+$router = new Aura\Router\RouterContainer($argv[2]);
+(new Fisharebest\Webtrees\Http\Routes\WebRoutes())->load($router->getMap());
+Fisharebest\Webtrees\Registry::container()->set(Aura\Router\RouterContainer::class, $router);
+$request = (new Nyholm\Psr7\ServerRequest('GET', 'https://example.org' . $argv[2] . '/'))
+    ->withAttribute('base_url', 'https://example.org' . $argv[2]);
+$routes = new Fisharebest\Webtrees\Factories\RouteFactory();
+$result = [];
+foreach ([false, true] as $pretty) {
+    Fisharebest\Webtrees\Registry::container()->set(
+        Psr\Http\Message\ServerRequestInterface::class,
+        $request->withAttribute('rewrite_urls', $pretty)
+    );
+    foreach (['CalendarPage' => ['view' => 'day'], 'IndividualPage' => ['xref' => 'I123'], 'FamilyPage' => ['xref' => 'F456']] as $handler => $params) {
+        $result[$handler . ($pretty ? '-pretty' : '-query')] = $routes->route(
+            'Fisharebest\\Webtrees\\Http\\RequestHandlers\\' . $handler,
+            ['tree' => $argv[3]] + $params
+        );
+    }
+}
+echo json_encode($result, JSON_THROW_ON_ERROR);
+"""
+    return json.loads(subprocess.run(
+        ["php", "-r", php, str(ROOT), base_path, tree],
+        check=True, capture_output=True, text=True,
+    ).stdout)
 
 
 def groups(text: str) -> list[tuple[list[str], list[str], list[str]]]:
@@ -140,6 +174,21 @@ class RobotsRulesTest(unittest.TestCase):
         text = render_template("/webtrees")
         self.assertTrue(blocked(text, "Claude-SearchBot", "/webtrees/index.php?route=%2Ftree%2Fexample-tree%2Fcalendar%2Fday"))
         self.assertFalse(blocked(text, "Claude-SearchBot", "/webtrees/index.php?route=%2Ftree%2Fexample-tree%2Findividual%2FI123"))
+
+    @unittest.skipUnless((ROOT / "vendor/autoload.php").exists(), "Composer dependencies required for real route generation")
+    def test_real_routes_with_encoded_tree_names(self) -> None:
+        for base_path in ("", "/webtrees"):
+            for tree in ("example-tree", "Family Tree", "Famille é", "Family+Tree", "Family%Tree"):
+                text = render_template(base_path, tree)
+                for name, absolute_url in generated_urls(base_path, tree).items():
+                    url = absolute_url.removeprefix("https://example.org")
+                    variants = [url]
+                    if "?route=" in url:
+                        variants.append(url.replace("?route=", "?lang=en&route="))
+                    for variant in variants:
+                        with self.subTest(base_path=base_path, tree=tree, route=name, url=variant):
+                            self.assertEqual(blocked(text, "Googlebot", variant), name.startswith("Calendar"))
+                            self.assertTrue(blocked(text, "GPTBot", variant))
 
     def check_public_routes(self, text: str) -> None:
         wildcard = next(group for group in groups(text) if "*" in group[0])

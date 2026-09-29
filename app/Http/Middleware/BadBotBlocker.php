@@ -35,13 +35,18 @@ use function array_filter;
 use function array_map;
 use function assert;
 use function count;
+use function dns_get_record;
 use function gethostbyaddr;
-use function gethostbyname;
+use function inet_pton;
+use function is_string;
 use function preg_match_all;
 use function random_int;
 use function response;
 use function str_contains;
 use function str_ends_with;
+
+use const DNS_A;
+use const DNS_AAAA;
 
 class BadBotBlocker implements MiddlewareInterface
 {
@@ -1640,7 +1645,7 @@ class BadBotBlocker implements MiddlewareInterface
      */
     private function checkRobotDNS(string $ip, array $valid_domains, bool $reverse_only): bool
     {
-        $host = gethostbyaddr($ip);
+        $host = $this->reverseDns($ip);
 
         if ($host === false) {
             return false;
@@ -1648,11 +1653,44 @@ class BadBotBlocker implements MiddlewareInterface
 
         foreach ($valid_domains as $domain) {
             if (str_ends_with($host, $domain)) {
-                return $reverse_only || $ip === gethostbyname($host);
+                if ($reverse_only) {
+                    return true;
+                }
+
+                $address = inet_pton($ip);
+
+                foreach ($this->forwardDns($host) as $candidate) {
+                    if ($address !== false && $address === inet_pton($candidate)) {
+                        return true;
+                    }
+                }
+
+                return false;
             }
         }
 
         return false;
+    }
+
+    protected function reverseDns(string $ip): string|false
+    {
+        return gethostbyaddr($ip);
+    }
+
+    /** @return list<string> */
+    protected function forwardDns(string $host): array
+    {
+        $addresses = [];
+
+        foreach (dns_get_record($host, DNS_A | DNS_AAAA) ?: [] as $record) {
+            $address = $record['ip'] ?? $record['ipv6'] ?? null;
+
+            if (is_string($address)) {
+                $addresses[] = $address;
+            }
+        }
+
+        return $addresses;
     }
 
     /**

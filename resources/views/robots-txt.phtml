@@ -34,15 +34,19 @@ $lines[] = 'Disallow: /';
 $lines[] = '';
 $lines[] = 'User-agent: *';
 
-// Cover clean URLs and both observed route query encodings. The wildcard
-// variants cover route= when another query parameter comes first.
+// Query routes contain the base path and percent-encode already escaped tree names.
+// Retain raw and slash-only forms for incoming links, as well as generated URLs.
 $append_path = static function (string $route_path) use (&$lines, $base_path): void {
-    $encoded_route = str_replace('/', '%2F', $route_path);
     $lines[] = 'Disallow: ' . $base_path . $route_path;
-    $lines[] = 'Disallow: ' . $base_path . '/index.php?route=' . $route_path;
-    $lines[] = 'Disallow: ' . $base_path . '/index.php?route=' . $encoded_route;
-    $lines[] = 'Disallow: ' . $base_path . '/index.php?*&route=' . $route_path;
-    $lines[] = 'Disallow: ' . $base_path . '/index.php?*&route=' . $encoded_route;
+
+    foreach (array_unique([$route_path, $base_path . $route_path]) as $query_path) {
+        $variants = array_unique([$query_path, str_replace('/', '%2F', $query_path), rawurlencode($query_path)]);
+
+        foreach ($variants as $variant) {
+            $lines[] = 'Disallow: ' . $base_path . '/index.php?route=' . $variant;
+            $lines[] = 'Disallow: ' . $base_path . '/index.php?*&route=' . $variant;
+        }
+    }
 };
 
 foreach ($site_paths as $site_path) {
