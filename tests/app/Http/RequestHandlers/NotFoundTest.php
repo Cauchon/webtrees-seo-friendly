@@ -19,8 +19,16 @@ declare(strict_types=1);
 
 namespace Fisharebest\Webtrees\Http\RequestHandlers;
 
+use Fig\Http\Message\RequestMethodInterface;
+use Fig\Http\Message\StatusCodeInterface;
+use Fisharebest\Webtrees\Http\Exceptions\HttpNotFoundException;
+use Fisharebest\Webtrees\Http\Middleware\BadBotBlocker;
+use Fisharebest\Webtrees\Registry;
 use Fisharebest\Webtrees\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
+use Psr\Http\Message\ServerRequestInterface;
+
+use function route;
 
 #[CoversClass(NotFound::class)]
 class NotFoundTest extends TestCase
@@ -28,5 +36,72 @@ class NotFoundTest extends TestCase
     public function testClass(): void
     {
         self::assertTrue(class_exists(NotFound::class));
+    }
+
+    public function testRobotBareHomePageRedirects(): void
+    {
+        foreach (['/', '/index.php'] as $path) {
+            $request = self::createRequest()
+                ->withAttribute(BadBotBlocker::ROBOT_ATTRIBUTE_NAME, true);
+            $request = $request->withUri($request->getUri()->withPath($path));
+
+            $response = (new NotFound())->handle($request);
+
+            self::assertSame(StatusCodeInterface::STATUS_FOUND, $response->getStatusCode());
+            self::assertSame(route(HomePage::class), $response->getHeaderLine('location'));
+            self::assertTrue(Registry::container()->get(ServerRequestInterface::class)
+                ->getAttribute(BadBotBlocker::ROBOT_ATTRIBUTE_NAME));
+        }
+    }
+
+    public function testRobotSubdirectoryHomePageRedirects(): void
+    {
+        foreach (['/family', '/family/', '/family/index.php'] as $path) {
+            $request = self::createRequest()
+                ->withAttribute('base_url', 'https://webtrees.test/family')
+                ->withAttribute(BadBotBlocker::ROBOT_ATTRIBUTE_NAME, true);
+            $request = $request->withUri($request->getUri()->withPath($path));
+
+            $response = (new NotFound())->handle($request);
+
+            self::assertSame(StatusCodeInterface::STATUS_FOUND, $response->getStatusCode());
+        }
+    }
+
+    public function testRobotUnknownPathAndExplicitRouteRemainNotFound(): void
+    {
+        $request = self::createRequest()
+            ->withAttribute(BadBotBlocker::ROBOT_ATTRIBUTE_NAME, true);
+        $request = $request->withUri($request->getUri()->withPath('/unknown'));
+
+        $response = (new NotFound())->handle($request);
+        self::assertSame(StatusCodeInterface::STATUS_NOT_FOUND, $response->getStatusCode());
+
+        $request = self::createRequest()
+            ->withAttribute(BadBotBlocker::ROBOT_ATTRIBUTE_NAME, true);
+        $request = $request->withUri($request->getUri()->withQuery('route=%2Ftree%2Fexample-tree'));
+
+        $response = (new NotFound())->handle($request);
+        self::assertSame(StatusCodeInterface::STATUS_NOT_FOUND, $response->getStatusCode());
+    }
+
+    public function testRobotNonGetRemainsNotFound(): void
+    {
+        $request = self::createRequest(RequestMethodInterface::METHOD_POST)
+            ->withAttribute(BadBotBlocker::ROBOT_ATTRIBUTE_NAME, true);
+        $request = $request->withUri($request->getUri()->withPath('/'));
+
+        $response = (new NotFound())->handle($request);
+
+        self::assertSame(StatusCodeInterface::STATUS_NOT_FOUND, $response->getStatusCode());
+    }
+
+    public function testHumanNonGetStillThrows(): void
+    {
+        $request = self::createRequest(RequestMethodInterface::METHOD_POST);
+        $request = $request->withUri($request->getUri()->withPath('/'));
+
+        $this->expectException(HttpNotFoundException::class);
+        (new NotFound())->handle($request);
     }
 }

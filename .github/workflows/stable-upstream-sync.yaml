@@ -1,0 +1,75 @@
+name: Prepare stable upstream sync
+
+on:
+  schedule:
+    - cron: '17 9 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: stable-upstream-sync
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      status: ${{ steps.prepare.outputs.status }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: intl,mbstring
+      - name: Verify sync logic offline
+        run: python3 -m unittest discover -s tests/sync -v
+      - name: Prepare release merge and review
+        id: prepare
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SYNC_OUTPUT_DIR: ${{ runner.temp }}/stable-sync
+        run: |
+          git switch -C main
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git remote add upstream https://github.com/fisharebest/webtrees.git
+          scripts/prepare-upstream-sync.sh --prepare-only
+          echo "status=$(cat "$SYNC_OUTPUT_DIR/status")" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        if: steps.prepare.outputs.status == 'prepared'
+        with:
+          name: stable-sync
+          path: ${{ runner.temp }}/stable-sync/
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    needs: prepare
+    if: needs.prepare.outputs.status == 'prepared'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: stable-sync
+          path: ${{ runner.temp }}/stable-sync
+      - name: Publish prepared branch and draft PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git switch -C main
+          gh auth setup-git
+          scripts/publish-upstream-sync.sh "$RUNNER_TEMP/stable-sync"

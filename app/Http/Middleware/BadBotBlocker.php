@@ -1535,13 +1535,14 @@ class BadBotBlocker implements MiddlewareInterface
             return $this->response('Not acceptable: no-ua');
         }
 
-        foreach (self::BAD_ROBOTS as $robot) {
-            if (str_contains($ua, $robot)) {
-                return $this->response('Not acceptable: bad-ua');
-            }
+        if (CauchonBotPolicy::isBlocked($ua)) {
+            return $this->response('Not acceptable: bad-ua');
         }
 
         $validated_bot =  false;
+        // Mixed preview clients advertise several services without belonging to each network.
+        // This is a public-reading exception, not verified crawler identity.
+        $multi_service_preview = CauchonBotPolicy::isMultiServicePreview($ua);
 
         foreach (self::ROBOT_REV_FWD_DNS as $robot => $valid_domains) {
             if (str_contains($ua, $robot)) {
@@ -1566,6 +1567,10 @@ class BadBotBlocker implements MiddlewareInterface
         // TODO: fetch current lists of IPs, rather than use hard-coded values.
 
         foreach (self::ROBOT_ASNS as $robot => $asns) {
+            if ($robot === 'facebook' && $multi_service_preview) {
+                continue;
+            }
+
             foreach ($asns as $asn) {
                 if (str_contains($ua, $robot)) {
                     foreach ($this->fetchIpRangesForAsn($asn) as $range) {
@@ -1605,26 +1610,11 @@ class BadBotBlocker implements MiddlewareInterface
             str_contains($ua, 'Safari/')
         ;
 
-        // Validated bots (such as google and bing) use headless browsers.  This is OK.
-        // Anyone else claiming to be a browser needs to prove it by setting a cookie.
-        if (!$validated_bot && $claims_to_be_human && !$has_cookies) {
-            $content =
-                '<!DOCTYPE html>' .
-                '<html lang="en">' .
-                '<head>' .
-                '<meta charset="utf-8">' .
-                '<title>Cookie check</title>' .
-                '<meta http-equiv="refresh" content="0">' .
-                '</head>' .
-                '<body>Cookie check</body>' .
-                '</html>';
-
-            return $this->response($content)
-                ->withHeader('set-cookie', 'x=y; HttpOnly; SameSite=Strict');
-        }
+        // Let first-time browsers see the requested page while setting the test cookie.
+        $needs_cookie = !$validated_bot && $claims_to_be_human && !$has_cookies;
 
         // Bots get restricted access
-        if ($validated_bot || $suspected_bot) {
+        if ($validated_bot || $suspected_bot || $multi_service_preview) {
             $request = $request->withAttribute(self::ROBOT_ATTRIBUTE_NAME, true);
         }
 
@@ -1636,7 +1626,11 @@ class BadBotBlocker implements MiddlewareInterface
             return $this->response('Not acceptable: not-wp');
         }
 
-        return $handler->handle($request);
+        $response = $handler->handle($request);
+
+        return $needs_cookie
+            ? $response->withAddedHeader('set-cookie', 'x=y; Path=/; HttpOnly; SameSite=Strict')
+            : $response;
     }
 
     /**

@@ -28,17 +28,39 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
+use function array_key_exists;
+use function in_array;
+use function parse_str;
+use function parse_url;
 use function redirect;
 use function response;
+use function rtrim;
 use function route;
+
+use const PHP_URL_PATH;
 
 final class NotFound implements RequestHandlerInterface
 {
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        // Robots don't need pretty error pages
+        // A bare site URL has no route yet. Let robots reach the public home page.
         if ($request->getAttribute(BadBotBlocker::ROBOT_ATTRIBUTE_NAME) !== null) {
-            return response('', StatusCodeInterface::STATUS_NOT_FOUND);
+            parse_str($request->getUri()->getQuery(), $uri_query);
+            $base_path  = rtrim(parse_url((string) $request->getAttribute('base_url', ''), PHP_URL_PATH) ?? '', '/');
+            $home_paths = [$base_path . '/', $base_path . '/index.php'];
+
+            if ($base_path !== '') {
+                $home_paths[] = $base_path;
+            }
+
+            if (
+                $request->getMethod() !== RequestMethodInterface::METHOD_GET ||
+                !in_array($request->getUri()->getPath(), $home_paths, true) ||
+                array_key_exists('route', $request->getQueryParams()) ||
+                array_key_exists('route', $uri_query)
+            ) {
+                return response('', StatusCodeInterface::STATUS_NOT_FOUND);
+            }
         }
 
         // Need the request to generate a route/error page.

@@ -6,7 +6,17 @@
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/fisharebest/webtrees/badges/quality-score.png?b=main)](https://scrutinizer-ci.com/g/fisharebest/webtrees/?branch=main)
 [![Code Climate](https://codeclimate.com/github/fisharebest/webtrees/badges/gpa.svg)](https://codeclimate.com/github/fisharebest/webtrees)
 [![StyleCI](https://github.styleci.io/repos/11836349/shield?branch=main)](https://github.styleci.io/repos/11836349?branch=main)
-# webtrees - online collaborative genealogy
+# webtrees with a less restrictive bot list
+
+> **This is an independent fork.** `webtrees-less-restrictive` is maintained by
+> Justin Cauchon and is not affiliated with or endorsed by the webtrees project.
+> It follows stable releases of [fisharebest/webtrees](https://github.com/fisharebest/webtrees)
+> and adjusts the bot policy to allow selected search engines, link previews,
+> and user-requested fetches. Named AI-training agents remain blocked.
+> See [WEBTREES-LESS-RESTRICTIVE.md](WEBTREES-LESS-RESTRICTIVE.md) for the policy and upstream review process.
+> Report problems with this fork's bot policy here, not to the webtrees project.
+
+The badges above describe the upstream project.
 
 ## Contents
 

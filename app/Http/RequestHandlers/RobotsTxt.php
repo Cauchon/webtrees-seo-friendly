@@ -19,7 +19,7 @@ declare(strict_types=1);
 
 namespace Fisharebest\Webtrees\Http\RequestHandlers;
 
-use Fisharebest\Webtrees\Http\Middleware\BadBotBlocker;
+use Fisharebest\Webtrees\Http\Middleware\CauchonBotPolicy;
 use Fisharebest\Webtrees\Module\SiteMapModule;
 use Fisharebest\Webtrees\Services\ModuleService;
 use Fisharebest\Webtrees\Services\TreeService;
@@ -55,7 +55,7 @@ final class RobotsTxt implements RequestHandlerInterface
         $trees    = $this->tree_service->all()->map(static fn (Tree $tree): string => $tree->name());
 
         $data = [
-            'bad_user_agents'  => BadBotBlocker::BAD_ROBOTS,
+            'bad_user_agents'  => CauchonBotPolicy::blockedRobots(),
             'base_url'         => $base_url,
             'base_path'        => parse_url($base_url, PHP_URL_PATH) ?? '',
             'disallowed_paths' => self::DISALLOWED_PATHS,
