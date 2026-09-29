@@ -18,7 +18,7 @@ URL rewriting if using pretty URLs.
 ## New installation
 
 1. Choose a published release in the [fork's Releases page](https://github.com/Cauchon/webtrees-seo-friendly/releases)
-   and download its attached `webtrees-seo-friendly-<fork-tag>.zip` distribution. Check the
+   and download its attached `webtrees-seo-friendly-<upstream-version>-r<revision>.zip` distribution. Check the
    tag and recorded SHA-256 digest against the release notes. GitHub's generated
    **Source code** ZIP lacks the bundled PHP dependencies; an upstream webtrees
    ZIP lacks this fork's policy.
@@ -81,13 +81,13 @@ release approval.
    `php -d memory_limit=1G vendor/bin/phpunit` and
    `python3 -m unittest discover -s tests/robots -v`. On the final clean
    commit, create a local fork-specific annotated tag such as
-   `2.2.6-fork.1`. Reserve plain numeric and `v`-prefixed numeric tags for
+   `seo-friendly/2.2.6-r1`. Reserve plain numeric and `v`-prefixed numeric tags for
    upstream releases. The tag identifies exactly the commit to package;
    `composer webtrees:build` archives `HEAD` and names the ZIP using
-   `git describe`.
+   `git describe`, with the `seo-friendly/` tag prefix removed.
 3. Run `composer webtrees:build`. It archives the committed source, installs
    production PHP dependencies into the distribution, compiles translations,
-   and creates `webtrees-seo-friendly-<git-describe>.zip`. Check that the output name uses
+   and creates `webtrees-seo-friendly-2.2.6-r1.zip` (for tag `seo-friendly/2.2.6-r1`). Check that the output name uses
    the intended fork tag; test the ZIP and inspect it for `webtrees/vendor/`,
    application files, and compiled translations. Record its SHA-256 digest. The
    build runs `composer install --no-dev` in the checkout, which is why a
