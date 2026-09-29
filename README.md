@@ -6,7 +6,7 @@
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/fisharebest/webtrees/badges/quality-score.png?b=main)](https://scrutinizer-ci.com/g/fisharebest/webtrees/?branch=main)
 [![Code Climate](https://codeclimate.com/github/fisharebest/webtrees/badges/gpa.svg)](https://codeclimate.com/github/fisharebest/webtrees)
 [![StyleCI](https://github.styleci.io/repos/11836349/shield?branch=main)](https://github.styleci.io/repos/11836349?branch=main)
-# webtrees with a less restrictive bot list
+# webtrees-less-restrictive
 
 > **This is an independent fork.** `webtrees-less-restrictive` is maintained by
 > Justin Cauchon and is not affiliated with or endorsed by the webtrees project.
@@ -101,16 +101,16 @@ the project even stronger and better.
 
 To install **webtrees**, you need:
 
-* A webserver. Apache, NGINX and IIS are the most common types. To use “Pretty URLs”, you will need to configure URL rewriting"
-* A database. MySQL is recommended, although PostgreSQL, SQL-Server and SQLite can be used. Some features rely on MySQL for collation.  Other database might not sort names according to local rules.  **webtrees** uses a prefix for its table names, so you can install several instances of webtrees in the same database.
-* Approximately 100MB of disk space for the application files, plus whatever is
-  needed for your media files, GEDCOM files and database.
-* PHP 7.1 - 7.4. Servers with PHP 5.3 - 7.0 can use **webtrees** 1.7.
-   * PHP should be configured to allow sufficient server resources (memory and
-     execution time) for the size of your system. Typical requirements are:
-      * Small systems (500 individuals): 16–32 MB, 10–20 seconds
-      * Medium systems (5,000 individuals): 32–64 MB, 20–40 seconds
-      * Large systems (50,000 individuals): 64–128 MB, 40–80 seconds
+* A web server such as Apache, NGINX, or IIS. Pretty URLs require URL rewriting.
+* A database supported by webtrees and its matching PHP PDO driver. MySQL is
+  recommended; PostgreSQL, SQL Server, and SQLite are also supported.
+* PHP 8.3 through 8.6 with the extensions required by [composer.json](composer.json),
+  including ctype, curl, gd, iconv, intl, mbstring, PDO, session, and XML.
+* Disk space for the application, dependencies, database, GEDCOM files, and media.
+  Configure PHP memory and execution time for the size of your family trees.
+
+See [installation and release guidance](docs/installation.md) for deployment and
+build requirements.
 
 ## Browser compatibility
   
@@ -119,76 +119,43 @@ To install **webtrees**, you need:
 
 ## Installation
 
-1. Download the .ZIP file for latest stable version from [github.com](https://github.com/fisharebest/webtrees/releases/latest).
-2. Unzip the files and then upload them to an empty folder on your web server.
-3. Open your web browser and type the URL for your **webtrees** site (for example,
-   ``https://www.yourserver.com/webtrees`` into the address bar.
-4. The **webtrees** setup wizard will start automatically.
+Install a published **webtrees-less-restrictive** distribution ZIP attached to a
+[release of this fork](https://github.com/Cauchon/webtrees/releases). Extract its
+`webtrees/` folder into the site directory, then open the site URL to start the
+setup wizard. GitHub's automatically generated source ZIP and upstream webtrees
+ZIPs are not fork distributions. If no fork release has been published, build a
+distribution from a reviewed commit using the
+[installation and release guide](docs/installation.md).
 
-Your first task will be to create a family tree.
-
-If you have a GEDCOM file, you can import it into the tree. If not, just start
-entering your family tree. 
-
-There are lots of configuration options. You'll probably want to review the
-privacy settings first. Don't worry too much about all the other options - the
-defaults are good for most people. If you get stuck, you can get friendly help
-and advice from the [help](https://www.webtrees.net/index.php/forum) forum.
+After setup, review tree privacy and the generated
+[robots.txt guidance](docs/robots-deployment.md).
 
 ## Upgrading
 
-Upgrading **webtrees** is quick and easy. It is strongly recommended that you
-upgrade your installation whenever a new version is made available. Even minor
-**webtrees** version updates usually contain a significant number of bug fixes
-as well as interface improvements and program enhancements.
+Use a newer published distribution ZIP from this fork and follow the
+[manual upgrade procedure](docs/installation.md#manual-upgrade). Back up the
+database and `data/` directory, put the site in maintenance mode, merge the new
+application files without replacing `data/`, then verify the site before
+removing maintenance mode.
 
-* **Automatic upgrade**
-
-  **webtrees** has an automatic upgrade facility. An administrator upon logging in
-will receive notification when a new version is available and an option to start
-the automatic upgrade. If for some reason the automatic upgrade should fail
-then a manual upgrade should be performed.
-
-* **Manual upgrade**
-
-  1. Now would be a good time to make a [backup](#backup).
-  2. Download the latest version of **webtrees** available from
-   [webtrees.net](https://webtrees.net/)
-  3. While you are in the middle of uploading the new files,
-   a visitor to your site would encounter a mixture of new and old files. This
-   could cause unpredictable behavior or errors. To prevent this, create the
-   file **data/offline.txt**. While this file exists, visitors will see a
-   “site unavailable - come back later” message.
-  4. Unzip the .ZIP file, and upload the files to your web server, overwriting the existing files.
-  5. Delete the file **data/offline.txt**.
-
-### Note for Macintosh users
-
-Step 4 assumes you are using a copy tool that **merges** directories rather than
-replaces them. (**Merge** is standard behavior on Windows and Linux.) If you use
-the Macintosh Finder or other similar tool to perform step 3, it will **replace**
-your configuration, media and other directories with the empty/default ones from
-the installation. This would be very bad (but you did take a backup in step 1,
-didn't you!). Further details and recommendations for suitable tools can be found
-by searching [google.com](https://google.com).
+**Do not use the in-app automatic upgrade wizard for a fork installation.**
+It checks the upstream webtrees update service and downloads an upstream ZIP,
+which can replace this fork's code and bot policy. An upstream release or a
+merged sync PR does not itself publish a fork release or update an installation.
 
 ## Building and developing
 
-If you want to build webtrees from source, or modify the code, you'll need to install
-a couple of tools first.
+For development, install [Composer](https://getcomposer.org/) dependencies with
+`composer install`. When changing JavaScript or CSS, run `npm ci` and
+`npm run production`, then commit the generated assets with the source changes.
 
-You will need [composer](https://getcomposer.org/) to install the PHP dependencies.
-Then run this command::
-
-* php composer.phar install
-
-You will need [npm](https://www.npmjs.com/get-npm) to install the Javascript dependencies.
-Then run the commands:
-
-* npm install
-* npm run production
-
-You will need to re-run the second of these any time you modify the file `webtrees.js`.
+A maintainer builds an installable ZIP from a reviewed, clean, tagged commit with
+`composer webtrees:build`. This requires Git, tar, zip, Composer, PHP, and the
+extensions in `composer.json`; the build installs production PHP dependencies
+and compiles translations. See the
+[release procedure](docs/installation.md#building-and-publishing-a-fork-release)
+before publishing an artifact. The release is a separate owner decision after
+review and deployment checks.
 
 ## Gedcom (family tree) files
 

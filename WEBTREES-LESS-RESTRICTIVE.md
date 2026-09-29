@@ -101,7 +101,11 @@ PR comment and merge when the owner cannot formally approve their own PR.
 Automation must never merge, deploy, or tag a fork release.
 
 Publishing a fork release and deploying it are separate steps; merging an
-upstream update does not update an installation. Keep deployment inventories,
-server addresses, logs, credentials, and rollback records outside the public
-source repository. See [robots.txt deployment](docs/robots-deployment.md) for
-site-independent installation guidance.
+upstream update does not update an installation. The
+[installation and release guide](docs/installation.md) covers the distribution
+ZIP, manual upgrades, build prerequisites, and owner release gate. The in-app
+upgrade wizard still downloads upstream webtrees and must not be used for this
+fork. Keep deployment inventories, server addresses, logs, credentials, and
+rollback records outside the public source repository. See
+[robots.txt deployment](docs/robots-deployment.md) for site-independent crawler
+guidance.

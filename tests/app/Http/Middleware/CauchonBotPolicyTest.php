@@ -89,14 +89,16 @@ class CauchonBotPolicyTest extends TestCase
 
         self::assertTrue(CauchonBotPolicy::isMultiServicePreview($multi_service));
 
-        foreach ([
+        $user_agents = [
             'Mozilla/5.0 Safari/537.36 facebookexternalhit/1.1',
             'Mozilla/5.0 Safari/537.36 Facebot',
             'Mozilla/5.0 Safari/537.36 Twitterbot/1.0',
             'facebookexternalhit/1.1 Facebot Twitterbot/1.0',
             'Mozilla/5.0 safari/537.36 facebookexternalhit/1.1 Facebot Twitterbot/1.0',
             'Mozilla/5.0 Safari/537.36 FacebookExternalHit/1.1 Facebot Twitterbot/1.0',
-        ] as $user_agent) {
+        ];
+
+        foreach ($user_agents as $user_agent) {
             self::assertFalse(CauchonBotPolicy::isMultiServicePreview($user_agent), $user_agent);
         }
     }
