@@ -109,7 +109,7 @@
             "echo \"<?php require __DIR__ . '/../../conditionable/Traits/Conditionable.php';\" > webtrees/vendor/illuminate/support/Traits/Conditionable.php",
             "php index.php compile-po-files",
             "for FILE in resources/lang/*/messages.php; do cp $FILE webtrees/$FILE; done",
-            "zip --quiet --recurse-paths --move -9 webtrees-seo-friendly-`git describe`.zip webtrees"
+            "zip --quiet --recurse-paths --move -9 webtrees-seo-friendly-`git describe | sed 's|^seo-friendly/||'`.zip webtrees"
         ],
         "webtrees:phpcs": [
             "vendor/bin/phpcs --colors --exclude=Generic.Files.LineLength index.php app tests"

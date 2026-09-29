@@ -54,7 +54,7 @@ the highest numeric stable version among published upstream GitHub releases,
 excluding drafts and prereleases. It merges only that release tag, never
 `upstream/main`, and refuses downgrades and divergent stable history.
 Reserve plain numeric and `v`-prefixed numeric tags for upstream releases; use a
-fork-specific suffix such as `2.2.6-fork.1` when tagging a fork release.
+fork-specific tag such as `seo-friendly/2.2.6-r1` when tagging a fork release.
 
 The stable-sync workflow runs daily at 09:17 UTC or by manual dispatch. It prepares a deterministic
 `sync/upstream-<version>` branch and bot-list report in a read-only job. A separate
